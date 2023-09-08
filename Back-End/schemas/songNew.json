@@ -1,0 +1,22 @@
+{
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "minLength": 1
+      },
+      "artist": {
+        "type": "string",
+        "minLength": 1
+      },
+      "duration_seconds": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "release_year": {
+        "type": "integer"
+      }
+    },
+    "required": ["title", "artist", "duration_seconds"],
+    "additionalProperties": false
+  }

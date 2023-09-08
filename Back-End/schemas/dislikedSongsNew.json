@@ -1,0 +1,19 @@
+{
+    "type": "object",
+    "properties": {
+      "songName": {
+        "type": "string",
+        "minLength": 1
+      },
+      "artist": {
+        "type": "string",
+        "minLength": 1
+      },
+      "album": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "required": ["songName", "artist", "album"],
+    "additionalProperties": false
+  }

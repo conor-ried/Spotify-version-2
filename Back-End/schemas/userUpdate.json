@@ -1,0 +1,17 @@
+{
+    "type": "object",
+    "properties": {
+      "first_name": {
+        "type": "string",
+        "minLength": 1
+      },
+      "last_name": {
+        "type": "string",
+        "minLength": 1
+      },
+      "email": {
+        "type": "string",
+        "format": "email"
+      }
+    }
+  }
