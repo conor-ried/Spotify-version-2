@@ -1,0 +1,9 @@
+{
+    "app": {
+      "port": 3002,
+      "env": "test"
+    },
+    "database": {
+      "uri": "mongodb://localhost:27017/testDB"
+    }
+  }

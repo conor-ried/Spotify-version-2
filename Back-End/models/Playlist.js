@@ -3,71 +3,85 @@ const { BadRequestError, NotFoundError } = require('../expressError');
 const { sqlForPartialUpdate } = require('../helpers/sql');
 
 class Playlist {
-  static async create({ title, owner, songs }) {
+  static async create({ title, user_id }) {
     const result = await db.query(
       `INSERT INTO playlists
-         (title, owner, songs)
-         VALUES ($1, $2, $3)
-         RETURNING title, owner, songs`,
-      [title, owner, songs]
+         (title, user_id)
+         VALUES ($1, $2)
+         RETURNING title, user_id`,
+      [title, user_id]
     );
     const playlist = result[0];
     return playlist;
   }
 
-  static async findAll(userId, isAdmin) {
-    let query;
-    let values = [userId];
+  static async findAll() {
+    const query = `
+    SELECT
+      p.title AS playlist_title,
+      u.username AS user_username,
+      s.title AS song_title,
+      s.artist AS song_artist
+    FROM
+      playlists AS p
+    JOIN
+      users AS u ON p.user_id = u.user_id
+    LEFT JOIN
+      playlist_songs AS ps ON p.playlist_id = ps.playlist_id
+    LEFT JOIN
+      songs AS s ON ps.song_id = s.song_id`;
 
-    if (isAdmin) {
-      query = `
-        SELECT title, owner, songs
-        FROM playlists`;
-      values = [];
-    } else {
-      query = `
-        SELECT p.title, p.owner, p.songs
-        FROM playlists AS p
-        WHERE p.user_id = $1
-        UNION
-        SELECT p.title, p.owner, p.songs
-        FROM playlists AS p
-        INNER JOIN follows AS f ON p.user_id = f.follows_id
-        WHERE f.user_id = $1`;
-    }
-    console.log("in model running console.log on query",query);
-
-    const playlists = await db.query(query, values);
+  const playlists = await db.query(query);
     return playlists;
   }
 
   static async getByTitle(title) {
     const playlistRes = await db.query(
-      `SELECT title, owner, songs
-       FROM playlists
-       WHERE title = $1`,
+      `SELECT 
+        p.title AS playlist_title,
+        u.username AS user_username,
+        s.title AS song_title,
+        s.artist AS song_artist
+      FROM
+        playlists AS p
+      JOIN
+        users AS u ON p.user_id = u.user_id
+      LEFT JOIN
+        playlist_songs AS ps ON p.playlist_id = ps.playlist_id
+      LEFT JOIN
+        songs AS s ON ps.song_id = s.song_id
+      WHERE p.title = $1`,
       [title]
     );
-    const playlist = playlistRes[0];
+    console.log('this is playlists log from line 56 on backend', playlistRes);
+    const playlist = {
+      playlist_title: playlistRes[0].playlist_title,
+      user_username: playlistRes[0].user_username,
+      songs: playlistRes.map(row => ({
+        title: row.song_title,
+        artist: row.song_artist
+      }))
+    };
+  
     return playlist;
   }
 
   static async update(title, data) {
     const { setCols, values } = sqlForPartialUpdate(data, {
       title: 'title',
-      owner: 'owner'
+      user_id: 'user_id'
     });
     const titleVarIdx = '$' + (values.length + 1);
-
+  
     const querySql = `UPDATE playlists 
                       SET ${setCols} 
                       WHERE title = ${titleVarIdx} 
-                      RETURNING title, owner, songs`;
+                      RETURNING title, user_id`;
     const result = await db.query(querySql, [...values, title]);
     const playlist = result[0];
     return playlist;
   }
-
+  
   static async remove(title) {
     const result = await db.query(
       `DELETE
@@ -78,6 +92,38 @@ class Playlist {
     );
     const playlist = result[0];
     return playlist;
+  }
+
+  static async addSong(playlistTitle, songId) {
+    const playlistRes = await db.query(
+      `SELECT playlist_id FROM playlists WHERE title=$1`,
+      [playlistTitle]
+    );
+    console.log('line 102', playlistRes);
+    // console.log('line 103', playlistRes.rows[0].playlist_id);
+    const playlistType = playlistRes[0].playlist_id;  // Accessing the playlist_id correctly
+    console.log('Line 104 corrected', playlistType);
+    console.log(songId);
+    console.log(`Query: INSERT INTO playlist_songs (playlist_id, song_id) VALUES ($1, $2), Values: `, [playlistType, songId]);
+
+
+    await db.query(
+      `INSERT INTO playlist_songs (playlist_id, song_id) VALUES ($1, $2)`,
+      [playlistType, songId]
+    );
+  }
+
+  static async removeSong(playlistTitle, songId) {
+    const playlistRes = await db.query(
+      `SELECT playlist_id FROM playlists WHERE title=$1`,
+      [playlistTitle]
+    );
+    const playlistId = playlistRes.rows[0].playlist_id;
+
+    await db.query(
+      `DELETE FROM playlist_songs WHERE playlist_id=$1 AND song_id=$2`,
+      [playlistId, songId]
+    );
   }
 }
 

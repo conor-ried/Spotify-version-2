@@ -1,11 +1,30 @@
 const pgp = require('pg-promise')();
-const connectionOptions = {
-  host: 'localhost',
-  port: 5432, // Default PostgreSQL port
-  database: 'spotify', // Your database name
-  user: 'admin',
-  password: 'adminpassword',
-};
+
+let connectionOptions;
+require('dotenv').config();
+const SECRET_KEY = process.env.JWT_SECRET;
+if (process.env.NODE_ENV === 'test') {
+  // Use a separate database for tests
+  connectionOptions = {
+    host: 'localhost',
+    port: 5432,
+    database: 'spotify_test', // Your test database name
+    user: 'admin',
+    password: 'adminpassword',
+  };
+} else if (process.env.DATABASE_URL) {
+  // Use DATABASE_URL if available (e.g., in production)
+  connectionOptions = process.env.DATABASE_URL;
+} else {
+  // Use explicit connection options for local development
+  connectionOptions = {
+    host: 'localhost',
+    port: 5432, 
+    database: 'spotify', 
+    user: 'admin',
+    password: 'adminpassword',
+  };
+}
 
 const db = pgp(connectionOptions);
 
@@ -15,15 +34,3 @@ module.exports = db;
 
 
 
-
-// const { Sequelize } = require('sequelize');
-
-// const sequelize = new Sequelize({
-//   dialect: 'postgres',
-//   database: 'spotify', //  database name
-//   username: 'admin',
-//   password: 'adminpassword',
-//   host: 'localhost', 
-// });
-
-// module.exports = sequelize;

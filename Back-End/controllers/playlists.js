@@ -5,59 +5,76 @@ const Playlist = require('../models/Playlist');
 // const authenticateJWT = require('../middleware/authMiddleware');
 // const jwt = require('jsonwebtoken');
 const playlistNewSchema = require('../schemas/playlistNew.json');
-
+const playlistUpdateSchema = require('../schemas/playlistUpdate.json');
 const router = new express.Router();
 
 router.post('/', async function (req, res, next) {
   try {
-    const { name, username } = req.body;
-    const validator = jsonschema.validate(req.body, playlistNewSchema);
+    const { title, user_id } = req.body; // Extract title and user_id from the request body
+    console.log(req.body);
+
+    // Validate the request body using the schema
+    const validator = jsonschema.validate({ title, user_id }, playlistNewSchema);
+
+    // Check if the validation failed
     if (!validator.valid) {
       const errs = validator.errors.map(e => e.stack);
       throw new BadRequestError(errs);
     }
 
-    const playlist = await Playlist.create({ name, username });
+    // Create a new playlist using the provided data
+    const playlist = await Playlist.create({ title, user_id }); // Pass title and user_id as separate arguments
+    
+    // Return a success response with the created playlist
     return res.status(201).json({ playlist });
   } catch (err) {
+    // Pass the error to the error handling middleware
     return next(err);
   }
 });
 
-router.get('/playlists',  async function (req, res, next) {
+router.get('/',  async function (req, res, next) {
   try {
-    const userId = req.user.id; 
-    const isAdmin = req.user.isAdmin; 
-    const playlists = await Playlist.findAll(userId, isAdmin);
-    console.log('Running console.log(on playlists', playlists);
+
+    const playlists = await Playlist.findAll();
+    console.log('Running console.log(on playlists in the backend man Line 40', playlists);
     return res.json({ playlists });
   } catch (err) {
     return next(err);
   }
 });
 
-router.get('/:name', async function (req, res, next) {
+router.get('/:title', async function (req, res, next) {
   try {
-    const playlist = await Playlist.getByName(req.params.name);
+    const playlist = await Playlist.getByTitle(req.params.title);
     return res.json({ playlist });
   } catch (err) {
     return next(err);
   }
 });
 
-router.patch('/:name', async function (req, res, next) {
+router.patch('/:title', async function (req, res, next) {
   try {
-    const playlist = await Playlist.update(req.params.name, req.body);
+    // Validate the request body using the schema
+    const validator = jsonschema.validate(req.body, playlistUpdateSchema);
+    if (!validator.valid) {
+      const errs = validator.errors.map(e => e.stack);
+      throw new BadRequestError(errs);
+    }
+
+    const playlist = await Playlist.update(req.params.title, req.body);
     return res.json({ playlist });
   } catch (err) {
     return next(err);
   }
 });
 
-router.delete('/:name', async function (req, res, next) {
+
+
+router.delete('/:title', async function (req, res, next) {
   try {
-    await Playlist.remove(req.params.name);
-    return res.json({ deleted: req.params.name });
+    await Playlist.remove(req.params.title);
+    return res.json({ deleted: req.params.title});
   } catch (err) {
     return next(err);
   }

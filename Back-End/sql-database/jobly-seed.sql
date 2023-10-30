@@ -47,6 +47,7 @@ VALUES
   (1, 'Tech Podcast', 'Host X', 'Tech-related discussions'),
   (2, 'Science Podcast', 'Host Y', 'Science news and discoveries'),
   (3, 'Comedy Podcast', 'Host Z', 'Laughs and humor');
+  (35, 'Comedy Podcast', 'Host Z', 'Laughs and humor');
 
 -- Insert data into the 'disliked_songs' table (songs that users dislike)
 INSERT INTO disliked_songs (user_id, song_id)
@@ -61,3 +62,22 @@ VALUES
   (1, 1), -- User 1 sees Song 5 in their feed
   (2, 2), -- User 2 sees Song 6 in their feed
   (3, 3);
+
+
+  INSERT INTO artist_genres (artist, genre) VALUES ('Beatles', 'Rock');
+INSERT INTO artist_genres (artist, genre) VALUES ('Beatles', 'Pop');
+INSERT INTO artist_genres (artist, genre) VALUES ('Portugal the Man', 'Alternative');
+INSERT INTO artist_genres (artist, genre) VALUES ('Portugal the Man', 'Indie');
+
+
+INSERT INTO songs (title, artist, duration_seconds, release_year)
+VALUES
+  ('Feel It Still', 'Portugal the Man', 210, 2017),
+  ('Purple Yellow Red & Blue', 'Portugal the Man', 220, 2013);
+
+
+
+  INSERT INTO songs (title, artist, duration_seconds, release_year)
+VALUES
+  ('Help!', 'Beatles', 180, 1965),
+  ('A Hard Day''s Night', 'Beatles', 190, 1964);

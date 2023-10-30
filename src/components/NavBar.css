@@ -1,0 +1,33 @@
+nav {
+    background-color: #333; /* Dark grey background */
+    overflow: hidden; /* Ensure the navbar takes no additional space */
+  }
+  
+  nav ul {
+    list-style-type: none; /* Remove bullet points */
+    margin: 0; /* Remove default margin */
+    padding: 0; /* Remove default padding */
+    display: flex; /* Align items in a row */
+  }
+  
+  nav li {
+    padding: 14px 20px; /* Padding around text */
+  }
+  
+  nav a {
+    color: white; /* White text color */
+    text-decoration: none; /* Remove underline */
+    font-size: 18px; /* Set font size */
+  }
+  
+  /* Hover state styling */
+  nav a:hover {
+    background-color: #ddd; /* Light grey background on hover */
+    color: black; /* Black text on hover */
+  }
+  
+  /* Active link styling */
+  nav a.active {
+    background-color: #4CAF50; /* Green background for the active link */
+    color: white; /* White text for the active link */
+  }

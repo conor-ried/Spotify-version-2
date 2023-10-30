@@ -1,44 +1,61 @@
 const db = require('../database');
+const { UnauthorizedError } = require('../expressError');
 const { BadRequestError, NotFoundError } = require('../expressError');
 const { sqlForPartialUpdate } = require('../helpers/sql');
-
+const bcrypt = require('bcrypt');
+const SALT_ROUNDS = 10; 
 class User {
-  /** Create a new user, update the database, and return the new user data.
-   *
-   * data should be { username, password, firstName, lastName, email }
-   *
-   * Returns { username, firstName, lastName, email }
-   *
-   * Throws BadRequestError if the username is already in the database.
-   */
-  static async create({ username, password, first_name, last_name, email }) {
-    // const duplicateCheck = await db.query(
-    //   `SELECT username
-    //    FROM users
-    //    WHERE username = $1`,
-    //   [username]
-    // );
 
-    // if (duplicateCheck.rows[0]) throw new BadRequestError(`Duplicate username: ${username}`);
-   
-    const result = await db.query(
-      `INSERT INTO users
-         (username, password, first_name, last_name, email)
-         VALUES ($1, $2, $3, $4, $5)
-         RETURNING username, first_name , last_name , email`,
-      [username, password, first_name, last_name, email]
-    );
-    console.log('Result:', result);
 
-// Access the user data
-    const user = result[0]; // Since result is an array
+static async create({ username, password, first_name, last_name, email }) {
+    
+  // Check for duplicate username
+  const duplicateCheck = await db.query(
+    `SELECT username
+     FROM users
+     WHERE username = $1`,
+    [username]
+  );
+    console.log(duplicateCheck);
+    console.log('AI is wack', duplicateCheck.rows);
+    if (duplicateCheck.length > 0) {
+      throw new BadRequestError(`Duplicate username: ${username}`);
+    }
 
-    console.log('User:', user);
+  // Hash the password
+  const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
-    return user;
+  // Save the new user to the database
+  const result = await db.query(
+    `INSERT INTO users
+       (username, password, first_name, last_name, email)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING username, first_name, last_name, email`,
+    [username, hashedPassword, first_name, last_name, email]
+  );
+
+  // Access the user data
+  const user = result[0]; 
+
+  console.log('Created User:', user);
+  return user;
+}
+ 
+static async authenticate(username, rawPassword) {
+  const userRes = await db.query('SELECT * FROM users WHERE username =$1', [username]);
+  console.log(userRes);
+  const user = userRes[0];
+
+  if (user) {
+      const isValid = await bcrypt.compare(rawPassword, user.password);
+      if (isValid) {
+          return user;
+      }
   }
+  throw new UnauthorizedError("Invalid username/password");
+}
 
-  /** Find all users.
+/** Find all users.
    *
    * Returns [{ username, firstName, lastName, email }, ...]
    */
@@ -55,23 +72,7 @@ class User {
     console.log('Query result:', users);
     return users;
   }
-  // static async findAll() {
-  //   const usersRes = await db.query(
-  //     `SELECT username,
-  //             first_name AS "firstName",
-  //             last_name AS "lastName",
-  //             email
-  //      FROM users`
-  //   );
 
-  //   return usersRes.rows;
-  // }
-
-  /** Get user by username.
-   *
-   * Returns { username, firstName, lastName, email }
-   * Throws NotFoundError if the user is not found.
-   */
   static async getByUsername(username) {
     console.log('Fetching user with username:', username);
     const userRes = await db.query(

@@ -3,65 +3,62 @@ const { BadRequestError, NotFoundError } = require('../expressError');
 const { sqlForPartialUpdate } = require('../helpers/sql');
 
 class DislikedSong {
-  static async create({ songName, artist, album }) {
+  static async create({ userId, songId }) {
     const result = await db.query(
-      `INSERT INTO dislikedsongs
-         (songName, artist, album)
-         VALUES ($1, $2, $3)
-         RETURNING songName, artist, album`,
-      [songName, artist, album]
+      `INSERT INTO disliked_songs
+         (user_id, song_id)
+         VALUES ($1, $2)
+         RETURNING user_id, song_id`,
+      [userId, songId]
     );
-    const song = result[0];
+    console.log(result);
+    const song = result;
     return song;
   }
 
   static async findAll() {
-    const songs = await db.query(
-      `SELECT songName, artist, album
-       FROM dislikedsongs`
-    );
-    return songs;
-  }
-
-  static async getByName(songName) {
-    const songRes = await db.query(
-      `SELECT songName, artist, album
-       FROM dislikedsongs
-       WHERE songName = $1`,
-      [songName]
-    );
-    const song = songRes[0];
-    return song;
-  }
-
-  static async update(songName, data) {
-    const { setCols, values } = sqlForPartialUpdate(data, {
-      songName: 'songName',
-      artist: 'artist',
-      album: 'album'
-    });
-    const songNameVarIdx = '$' + (values.length + 1);
-
-    const querySql = `UPDATE dislikedsongs 
-                      SET ${setCols} 
-                      WHERE songName = ${songNameVarIdx} 
-                      RETURNING songName, artist, album`;
-    const result = await db.query(querySql, [...values, songName]);
-    const song = result[0];
-    return song;
-  }
-
-  static async remove(songName) {
     const result = await db.query(
-      `DELETE
-       FROM dislikedsongs
-       WHERE songName = $1
-       RETURNING songName`,
-      [songName]
+      `SELECT u.username, s.title, s.artist
+       FROM disliked_songs ds
+       JOIN users u ON ds.user_id = u.user_id
+       JOIN songs s ON ds.song_id = s.song_id`
     );
-    const song = result[0];
-    return song;
+    console.log(result);
+    return result;
   }
+  static async getByName(songName) {
+    try {
+      const songIdResult = await db.query(
+        `SELECT song_id FROM songs WHERE title = $1`,
+        [songName]
+      );
+  
+      console.log('songIdResult:', songIdResult);
+      console.log('songIdResult with 0:', songIdResult[0]);
+  
+     
+  
+      const songId = songIdResult[0].song_id;
+      console.log('rows are the WOAT', songId);
+  
+      const dislikedSongsResult = await db.query(
+        `SELECT * FROM disliked_songs WHERE song_id = $1`,
+        [songId]
+      );
+  
+      console.log('dislikedSongsResult:', dislikedSongsResult);
+  
+      if(!dislikedSongsResult) {
+        throw new Error('Unexpected error: failed to fetch disliked songs');
+      }
+  
+      return dislikedSongsResult;
+    } catch (error) {
+      console.error(error);
+      return null;
+    }
+  }
+  // ... (no changes in update and remove for now)
 }
 
 module.exports = DislikedSong;

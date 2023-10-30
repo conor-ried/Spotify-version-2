@@ -9,11 +9,11 @@
         "type": "string",
         "minLength": 1
       },
-      "genre": {
+      "description": {
         "type": "string",
         "minLength": 1
       }
     },
-    "required": ["title", "host", "genre"],
+    "required": ["title", "host", "description"],
     "additionalProperties": false
   }

@@ -9,14 +9,14 @@ const router = new express.Router();
 
 router.post('/', async function (req, res, next) {
   try {
-    const { songName, artist, album } = req.body;
+    const { userId, songId } = req.body;
     const validator = jsonschema.validate(req.body, dislikedSongNewSchema);
     if (!validator.valid) {
       const errs = validator.errors.map(e => e.stack);
       throw new BadRequestError(errs);
     }
 
-    const song = await DislikedSongs.create({ songName, artist, album });
+    const song = await DislikedSongs.create({ userId, songId });
     return res.status(201).json({ song });
   } catch (err) {
     return next(err);
@@ -32,31 +32,26 @@ router.get('/', async function (req, res, next) {
   }
 });
 
-router.get('/:songName', async function (req, res, next) {
+router.get('/:songName', async (req, res) => {
   try {
-    const song = await DislikedSongs.getByName(req.params.songName);
-    return res.json({ song });
-  } catch (err) {
-    return next(err);
+    const songName = req.params.songName;
+    const dislikedSongs = await DislikedSongs.getByName(songName);
+
+    if (dislikedSongs === null) {
+      return res.status(500).send('An error occurred');
+    }
+
+    if (dislikedSongs.length === 0) {
+      return res.status(404).send('No disliked entries found for this song');
+    }
+
+    return res.json(dislikedSongs);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('An error occurred');
   }
 });
 
-router.patch('/:songName', async function (req, res, next) {
-  try {
-    const song = await DislikedSongs.update(req.params.songName, req.body);
-    return res.json({ song });
-  } catch (err) {
-    return next(err);
-  }
-});
 
-router.delete('/:songName', async function (req, res, next) {
-  try {
-    await DislikedSongs.remove(req.params.songName);
-    return res.json({ deleted: req.params.songName });
-  } catch (err) {
-    return next(err);
-  }
-});
 
 module.exports = router;

@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "properties": {
+    "userId": { "type": "number" },
+    "songId": { "type": "number" }
+  },
+  "required": ["userId", "songId"],
+  "additionalProperties": false
+}

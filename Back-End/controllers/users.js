@@ -6,18 +6,14 @@ const User = require('../models/User');
 
 const userNewSchema = require('../schemas/userNew.json');
 const userUpdateSchema = require('../schemas/userUpdate.json');
-
 const { createToken } = require('../helpers/token');
-const {authenticateUser, authorizeAdmin} = require('../middleware/auth');
+
 const router = new express.Router();
 
 /** POST / { user } =>  { user }
  *
- * user should be { username, password, firstName, lastName, email }
- *
- * Returns { username, firstName, lastName, email }
- *
- * Authorization required: login
+ * user should have { username, password, firstName, lastName, email }
+
  */
 router.post('/', async function (req, res, next) {
   try {
@@ -35,10 +31,12 @@ router.post('/', async function (req, res, next) {
     }
 
     const user = await User.create({ username, password, first_name, last_name, email, is_admin });
-    const token = createToken(user);
+    console.log(user);
+    // const token = createToken(user);
     // const token = createToken(user.id, username, is_admin);
-    console.log('Response sent:', { user, token});
-    return res.status(201).json({ user, token});
+    console.log('Response sent:', { user});
+    return res.status(201).json({ user});
+    // return res.status(201).json({ user, token});
   } catch (err) {
     return next(err);
   }
@@ -102,46 +100,71 @@ router.patch('/:username', async function (req, res, next) {
     return next(err);
   }
 });
+// // {
+// // 	"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InRlc3R1NHNlcjEwMDAwMCIsImlhdCI6MTY5NjAxNjkwMX0.-_PPhElkIwoNUjWZVdmb60Apk9yulQFNP4W5td_lF_w"
+// // }
+// {
+//   "username": "testu4ser100000",
+//   "password": "pas4sword123"
 
-/** DELETE /:username  =>  { deleted: username }
- *
- * Authorization: login
- */
-// router.delete('/:username', async function (req, res, next) {
+// }
+
+// router.post('/auth/login', async function(req, res, next) {
 //   try {
-//     await User.remove(req.params.username);
-//     return res.json({ deleted: req.params.username });
+//       const { username, password } = req.body;
+//       const user = await User.authenticate(username, password);
+      
+//       const token = createToken(user);
+//       return res.json({ token });
 //   } catch (err) {
-//     return next(err);
+//       return next(err);
 //   }
 // });
-router.delete('/:username', authenticateUser, authorizeAdmin, async (req, res, next) => {
+router.post('/auth/login', async function(req, res, next) {
   try {
-    // Extract the username from the request parameters
-    const username = req.params.username;
+      const { username, password } = req.body;
 
-    // Fetch the user making the request (requesting user)
-    const requestingUser = req.user;
+      // Ensure username and password are provided
+      if (!username || !password) {
+        throw new BadRequestError('Username and password are required');
+      }
 
-    // Fetch the user to be deleted
-    const userToDelete = await User.getByUsername(username);
+      const user = await User.authenticate(username, password);
+      
+      // Ensure user object is returned by User.authenticate method
+      if (!user) {
+        throw new UnauthorizedError('Invalid username/password');
+      }
 
-    // Check if the requesting user is an admin
-    if (!requestingUser.is_admin) {
-      // If not an admin, return a 403 Forbidden error
-      return res.status(403).json({ error: 'Unauthorized: Only admin users can delete users.' });
-    }
+      const token = createToken(user);
 
-    // Perform the user deletion by calling the remove method on the User model
-    await User.remove(username);
+      // Ensure to only return necessary user data, avoid sending sensitive data
+      const userData = {
+        username: user.username,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        email: user.email
+        // add other user fields as needed, but NOT the password
+      };
 
-    // Respond with a success message
-    return res.json({ deleted: username });
+      // Log for debugging, ensure to remove or comment out in production
+      console.log('Sending response:', { token, user: userData });
+
+      return res.json({ token, user: userData });
   } catch (err) {
-    // Handle any errors that may occur during the process
+      // Log error for debugging, ensure to remove or comment out in production
+      console.error('Error in /auth/login:', err);
+
+      return next(err);
+  }
+});
+router.delete('/:username', async function (req, res, next) {
+  try {
+    await User.remove(req.params.username);
+    return res.json({ deleted: req.params.username});
+  } catch (err) {
     return next(err);
   }
 });
-
 
 module.exports = router;
