@@ -1,5 +1,6 @@
 # Getting Started with Create React App
-
+# so the main things that I implemented for my site included using backend (psql, bcrypt, json, jest, express )
+# in the front end I used (react and redux as my main to two tools to interact with my backend)
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
@@ -69,3 +70,4 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
 # Spotify-version-2
+
